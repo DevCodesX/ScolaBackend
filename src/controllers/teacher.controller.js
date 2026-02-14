@@ -1,4 +1,4 @@
-const db = require('../db.js');
+const db = require('../config/db.js');
 
 // Dashboard summary for teacher
 const getTeacherDashboard = async (req, res) => {

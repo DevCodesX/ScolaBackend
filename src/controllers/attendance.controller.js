@@ -1,4 +1,4 @@
-const db = require('../db.js');
+const db = require('../config/db.js');
 const { v4: uuid } = require('uuid');
 
 // Mark/Update attendance (once per day - uses UPSERT)

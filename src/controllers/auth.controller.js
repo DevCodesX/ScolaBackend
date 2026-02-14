@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const db = require('../db.js');
+const db = require('../config/db.js');
 
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -29,7 +29,7 @@ const login = async (req, res) => {
                 role: user.role,
             },
             process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+            { expiresIn: "7d" }
         );
 
         res.json({
@@ -49,7 +49,7 @@ const login = async (req, res) => {
 
 // Register a new user (for testing/setup)
 const register = async (req, res) => {
-    const { email, password, institution_id, role = 'admin' } = req.body;
+    const { name, email, password, institution_id, role = 'admin' } = req.body;
 
     try {
         // Check if user already exists
@@ -70,9 +70,9 @@ const register = async (req, res) => {
         const id = uuid();
 
         await db.query(
-            `INSERT INTO users (id, email, password, institution_id, role) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [id, email, hashedPassword, institution_id, role]
+            `INSERT INTO users (id, name, email, password, institution_id, role) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [id, name, email, hashedPassword, institution_id, role]
         );
 
         res.status(201).json({

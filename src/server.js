@@ -12,7 +12,9 @@ const attendanceRoutes = require('./routes/attendance.routes.js');
 const gradesRoutes = require('./routes/grades.routes.js');
 const timetableRoutes = require('./routes/timetable.routes.js');
 const adminRoutes = require('./routes/admin.routes.js');
-const db = require('./db.js');
+const coursesRoutes = require('./routes/courses.routes.js');
+const subscriptionsRoutes = require('./routes/subscriptions.routes.js');
+const db = require('./config/db.js');
 
 const app = express();
 
@@ -45,6 +47,8 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/grades", gradesRoutes);
 app.use("/api/timetable", timetableRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/courses", coursesRoutes);
+app.use("/api/subscriptions", subscriptionsRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log(`Scola API running on port ${process.env.PORT}`);
