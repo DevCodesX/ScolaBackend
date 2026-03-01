@@ -1,5 +1,5 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 // Admin: add slot
 const addSlot = async (req, res) => {
@@ -25,7 +25,7 @@ const getClassTimetable = async (req, res) => {
 
     try {
         const [rows] = await db.query(
-            `SELECT t.*, c.name AS class_name, te.name AS teacher_name
+            `SELECT t.*, c.name AS class_name, CONCAT(te.first_name, ' ', te.last_name) AS teacher_name
              FROM timetable t
              JOIN classes c ON c.id = t.class_id
              JOIN teachers te ON te.id = t.teacher_id
@@ -42,7 +42,7 @@ const getClassTimetable = async (req, res) => {
 
 // Teacher timetable (their own schedule)
 const getTeacherTimetable = async (req, res) => {
-    const teacherId = req.user.userId;
+    const teacherId = req.user.teacherId;
 
     try {
         const [rows] = await db.query(
@@ -62,11 +62,11 @@ const getTeacherTimetable = async (req, res) => {
 
 // Get all slots (admin)
 const getAllSlots = async (req, res) => {
-    const institution_id = req.user.institution_id;
+    const institution_id = req.user.institutionId;
 
     try {
         const [rows] = await db.query(
-            `SELECT t.*, c.name AS class_name, te.name AS teacher_name
+            `SELECT t.*, c.name AS class_name, CONCAT(te.first_name, ' ', te.last_name) AS teacher_name
              FROM timetable t
              JOIN classes c ON c.id = t.class_id
              JOIN teachers te ON te.id = t.teacher_id

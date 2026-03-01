@@ -1,12 +1,12 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 const getClasses = async (req, res) => {
-    const institution_id = req.user.institution_id;
+    const institution_id = req.user.institutionId;
 
     try {
         const [rows] = await db.query(
-            `SELECT c.*, t.name AS teacher_name 
+            `SELECT c.*, CONCAT(t.first_name, ' ', t.last_name) AS teacher_name 
              FROM classes c 
              LEFT JOIN teachers t ON c.teacher_id = t.id 
              WHERE c.institution_id = ? 
@@ -22,7 +22,7 @@ const getClasses = async (req, res) => {
 
 const addClass = async (req, res) => {
     const { name, teacher_id } = req.body;
-    const institution_id = req.user.institution_id;
+    const institution_id = req.user.institutionId;
 
     const id = uuid();
 
@@ -55,7 +55,7 @@ const updateClass = async (req, res) => {
         }
 
         const [rows] = await db.query(
-            `SELECT c.*, t.name AS teacher_name 
+            `SELECT c.*, CONCAT(t.first_name, ' ', t.last_name) AS teacher_name 
              FROM classes c 
              LEFT JOIN teachers t ON c.teacher_id = t.id 
              WHERE c.id = ?`,

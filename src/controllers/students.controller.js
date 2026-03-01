@@ -1,8 +1,8 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 const getStudents = async (req, res) => {
-    const institution_id = req.user.institution_id;
+    const institution_id = req.user.institutionId;
 
     try {
         const [rows] = await db.query(
@@ -18,7 +18,7 @@ const getStudents = async (req, res) => {
 
 const addStudent = async (req, res) => {
     const { name, email, phone } = req.body;
-    const institution_id = req.user.institution_id;
+    const institution_id = req.user.institutionId;
 
     const id = uuid();
 

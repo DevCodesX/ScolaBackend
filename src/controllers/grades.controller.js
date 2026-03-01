@@ -1,5 +1,5 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 // Add a grade
 const addGrade = async (req, res) => {

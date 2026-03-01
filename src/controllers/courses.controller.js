@@ -1,5 +1,5 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 // Create a new course (teacher only)
 const createCourse = async (req, res) => {
@@ -10,7 +10,7 @@ const createCourse = async (req, res) => {
         await db.query(
             `INSERT INTO courses (id, title, description, teacher_id, price, max_students, type) 
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [id, title, description, req.user.userId, price, max_students, type]
+            [id, title, description, req.user.teacherId, price, max_students, type]
         );
 
         res.status(201).json({ message: "Course created", courseId: id });
@@ -24,9 +24,9 @@ const createCourse = async (req, res) => {
 const getCourses = async (req, res) => {
     try {
         const [rows] = await db.query(
-            `SELECT c.*, u.name AS teacher_name 
+            `SELECT c.*, CONCAT(t.first_name, ' ', t.last_name) AS teacher_name 
              FROM courses c 
-             LEFT JOIN users u ON c.teacher_id = u.id 
+             LEFT JOIN teachers t ON c.teacher_id = t.id 
              ORDER BY c.created_at DESC`
         );
         res.json(rows);
@@ -40,9 +40,9 @@ const getCourses = async (req, res) => {
 const getCourseById = async (req, res) => {
     try {
         const [rows] = await db.query(
-            `SELECT c.*, u.name AS teacher_name 
+            `SELECT c.*, CONCAT(t.first_name, ' ', t.last_name) AS teacher_name 
              FROM courses c 
-             LEFT JOIN users u ON c.teacher_id = u.id 
+             LEFT JOIN teachers t ON c.teacher_id = t.id 
              WHERE c.id = ?`,
             [req.params.id]
         );
@@ -66,7 +66,7 @@ const updateCourse = async (req, res) => {
         const [result] = await db.query(
             `UPDATE courses SET title = ?, description = ?, price = ?, max_students = ?, type = ? 
              WHERE id = ? AND teacher_id = ?`,
-            [title, description, price, max_students, type, req.params.id, req.user.userId]
+            [title, description, price, max_students, type, req.params.id, req.user.teacherId]
         );
 
         if (result.affectedRows === 0) {
@@ -86,7 +86,7 @@ const deleteCourse = async (req, res) => {
     try {
         const [result] = await db.query(
             "DELETE FROM courses WHERE id = ? AND teacher_id = ?",
-            [req.params.id, req.user.userId]
+            [req.params.id, req.user.teacherId]
         );
 
         if (result.affectedRows === 0) {

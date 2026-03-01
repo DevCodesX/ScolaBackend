@@ -1,5 +1,5 @@
 const db = require('../config/db.js');
-const { v4: uuid } = require('uuid');
+const { randomUUID: uuid } = require('crypto');
 
 // Mark/Update attendance (once per day - uses UPSERT)
 const markAttendance = async (req, res) => {

@@ -17,4 +17,15 @@ const requireOneOfRoles = (...roles) => {
     };
 };
 
-module.exports = { requireRole, requireOneOfRoles };
+// Check teacher type (free or institution)
+const requireTeacherType = (...types) => {
+    return (req, res, next) => {
+        if (!types.includes(req.user.teacherType)) {
+            return res.status(403).json({ message: "Forbidden - Wrong teacher type" });
+        }
+        next();
+    };
+};
+
+module.exports = { requireRole, requireOneOfRoles, requireTeacherType };
+

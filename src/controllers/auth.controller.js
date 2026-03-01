@@ -5,7 +5,12 @@ const db = require('../config/db.js');
 const login = async (req, res) => {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+    }
+
     try {
+        // 1. Find user
         const [rows] = await db.query(
             "SELECT * FROM users WHERE email = ?",
             [email]
@@ -16,73 +21,67 @@ const login = async (req, res) => {
         }
 
         const user = rows[0];
-        const isMatch = await bcrypt.compare(password, user.password);
+
+        // Check if active
+        if (!user.is_active) {
+            return res.status(403).json({ message: "Account is deactivated" });
+        }
+
+        // 2. Verify password
+        const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const token = jwt.sign(
-            {
-                userId: user.id,
-                institution_id: user.institution_id,
-                role: user.role,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        );
+        // 3. Build JWT payload based on role
+        const tokenPayload = {
+            userId: user.id,
+            role: user.role,
+        };
 
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                institution_id: user.institution_id
+        let responseData = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+        };
+
+        if (user.role === 'institution_admin') {
+            // Lookup institution
+            const [institutions] = await db.query(
+                "SELECT id, name FROM institutions WHERE owner_user_id = ?",
+                [user.id]
+            );
+            if (institutions.length) {
+                tokenPayload.institutionId = institutions[0].id;
+                responseData.institutionId = institutions[0].id;
+                responseData.institutionName = institutions[0].name;
             }
-        });
+        } else if (user.role === 'teacher') {
+            // Lookup teacher profile
+            const [teachers] = await db.query(
+                "SELECT id, institution_id, first_name, last_name, teacher_type FROM teachers WHERE user_id = ?",
+                [user.id]
+            );
+            if (teachers.length) {
+                tokenPayload.teacherId = teachers[0].id;
+                tokenPayload.institutionId = teachers[0].institution_id;
+                tokenPayload.teacherType = teachers[0].teacher_type;
+                responseData.teacherId = teachers[0].id;
+                responseData.institutionId = teachers[0].institution_id;
+                responseData.teacherType = teachers[0].teacher_type;
+                responseData.firstName = teachers[0].first_name;
+                responseData.lastName = teachers[0].last_name;
+            }
+        }
+
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+        res.json({ token, user: responseData });
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({ message: "Login failed" });
     }
 };
 
-// Register a new user (for testing/setup)
-const register = async (req, res) => {
-    const { name, email, password, institution_id, role = 'admin' } = req.body;
-
-    try {
-        // Check if user already exists
-        const [existing] = await db.query(
-            "SELECT id FROM users WHERE email = ?",
-            [email]
-        );
-
-        if (existing.length) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Generate UUID
-        const { v4: uuid } = require('uuid');
-        const id = uuid();
-
-        await db.query(
-            `INSERT INTO users (id, name, email, password, institution_id, role) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [id, name, email, hashedPassword, institution_id, role]
-        );
-
-        res.status(201).json({
-            message: "User created successfully",
-            userId: id
-        });
-    } catch (err) {
-        console.error("Register error:", err);
-        res.status(500).json({ message: "Registration failed" });
-    }
-};
-
-module.exports = { login, register };
+module.exports = { login };
